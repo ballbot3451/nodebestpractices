@@ -13,17 +13,12 @@
 우리의 애플리케이션 코드는 인프라나 실행 환경(오늘날의 컨테이너)이 핸들해야하는 것들을 대신 핸들해서는 안된다. 
 만약 로그의 위치를 애플리케이션에 정의해버리면 어떻게 될까? 그리고 이후에 그 위치를 수정해야한다면? 결론적으로 코드가 변경되고 배포된다.
 
-컨테이너 기반/클라우드 기반 플랫폼 환경에서 작업 하는 경우, 요구사항에 맞는 성능으로 확장 할 때 컨테이너가 재부팅되고 꺼질 수 있다.
-
-so we can't be sure where a logfile will end up. The execution environment (container) should decide where the log files get routed to instead. 
-The application should just log what it needs to to `stdout` / `stderr`, and the execution environment should be configured to pick up the log stream 
-from there and route it to where it needs to go. 
-Also, those on the team who need to specify and/or change the log destinations are often not application developers but are part of DevOps, 
-and they might not have familiarity with the application code. This prevents them from easily making changes. 
+컨테이너 기반/클라우드 기반 플랫폼 환경에서 작업 하는 경우, 요구사항에 맞는 성능으로 확장 할 때 컨테이너가 재부팅되고 꺼질 수 있으므로 로그파일이 어디서 끝날지를 확신 할 수 없다.
+따라서 실행 환경(컨테이너)이 로그 파일이 라우팅 될 위치를 결정해야만한다. 애플리케이션은 단순히 로깅 해야할 것들을 `stdout` / `stderr`에 기록하고, 실행 환경은 그것들을 로그 스트림으로 가져와서 저장(이동) 해아하는 위치에 라우팅 하도록 구성해야 한다. 또한, 로그파일의 위치를 지정 및 변경하는 팀원은 애플리케이션 개발자가 아니라 DevOps 엔지니어의 일이기도 하다. 그들은 애플리케이션 코드와 친하지 않을 수 있지만 오히려 그들이 쉽게 변화를 만드는것을 막을 수 있다.
 
 <br/><br/>
 
-### Code Example – Anti-pattern: Log routing tightly coupled to application
+### 예제 코드 - 안티 패턴: 로그 라우팅이 밀접하게 애플리케이션과 붙어 있음
 
 ```javascript
 const { createLogger, transports, winston } = require('winston');
@@ -46,12 +41,13 @@ const logger = createLogger({
 // log to MongoDB, which the application now must be concerned with
 winston.add(winston.transports.MongoDB, options);
 ```
-Doing it this way, the application now handles both application/business logic AND log routing logic!
+이렇게 구성하면, 애플리케이션은 비지니스 로직화 로그 라우팅 로직을 함께 핸들링한다!
 
 <br/><br/>
 
-### Code Example – Better log handling + Docker example
-In the application:
+### 예제 코드 - 더 나은 핸들링 + 도커 예제
+
+애플리케이션 코드:
 ```javascript
 const logger = new winston.Logger({
   level: 'info',
@@ -62,10 +58,10 @@ const logger = new winston.Logger({
 
 logger.log('info', 'Test Log Message with some parameter %s', 'some parameter', { anything: 'This is metadata' });
 ```
-Then, in the docker container `daemon.json`:
+도커 컨테이너: `daemon.json`:
 ```json5
 {
-  "log-driver": "splunk", // just using Splunk as an example, it could be another storage type
+  "log-driver": "splunk", // Splunk를 예제로 사용했지만, 어떤 스토리지 타입이던 상관 없다.
   "log-opts": {
     "splunk-token": "",
     "splunk-url": "",
@@ -73,27 +69,29 @@ Then, in the docker container `daemon.json`:
   }
 }
 ```
-So this example ends up looking like `log -> stdout -> Docker container -> Splunk`
+
+이 예제는 다음과 같게 된다 `log -> stdout -> Docker container -> Splunk` 
 
 <br/><br/>
 
-### Blog Quote: "O'Reilly"
+### 블로그 인용: "O'Reilly"
 
-From the [O'Reilly blog](https://www.oreilly.com/ideas/a-cloud-native-approach-to-logs),
- > When you have a fixed number of instances on a fixed number of servers, storing logs on disk seems to make sense. However, when your application can dynamically go from 1 running instance to 100, and you have no idea where those instances are running, you need your cloud provider to deal with aggregating those logs on your behalf.
+[O'Reilly blog](https://www.oreilly.com/ideas/a-cloud-native-approach-to-logs)
+
+> 만약 고정된 수의 서버와 고정된 수의 인스턴스가 있다면, 로그를 디스크에 저장하는게 좋습니다. 애플리케이션의 인스턴스 수가 유동적이고 그 인스턴스가 어디서 실행되는지 모르는 경우에는 클라우드 공급자가 대신 이러한 로그들을 집계해야 합니다.
 
 <br/><br/>
 
-### Quote: "12-Factor"
+### 인용: "12-Factor"
 
-From the [12-Factor best practices for logging](https://12factor.net/logs),
- > A twelve-factor app never concerns itself with routing or storage of its output stream. It should not attempt to write to or manage logfiles. Instead, each running process writes its event stream, unbuffered, to stdout.
+[12-Factor 로깅 모범 사례](https://12factor.net/logs)
+ > 12-Factor App 은 출력 스트림의 라우팅이나 저장소와는 전혀 관련이 없습니다. 또한 로그 파일을 관리하려고 하거나 쓰려고 시도해서는 안됩니다. 대신 실행중인 각각의 프로세스는 버퍼링 되지 않은, 이벤트 스트림을 stdout 에 기록합니다.
  
- > In staging or production deploys, each process’ stream will be captured by the execution environment, collated together with all other streams from the app, and routed to one or more final destinations for viewing and long-term archival. These archival destinations are not visible to or configurable by the app, and instead are completely managed by the execution environment.
+> 스테이징 또는 프로덕션 배포에서, 각가의 프로세스의 스트림은 실행 환경에 의해 캡쳐되어 앱의 다른 모든 스트림과 함께 수집되고, 로그를 보거나 장기간 보관을 위해 하나 이상의 최종 목적지로 라우팅 됩니다. 이러한 저장소적 성격의 목적지는 앱에 표시되거나 앱에 의해 구성 될 수 없으며, 대신 실행 환경에 의해 완전히 관리됩니다.
 
 <br/><br/>
 
- ### Example: Architecture overview using Docker and Splunk as an example
+ ### 예제: 도커와 Splunk를 사용한 아키텍처 개요
 
 ![alt text](../../assets/images/logging-overview.png "Log routing overview")
 
