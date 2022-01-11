@@ -13,7 +13,7 @@
 
 <br/>
 
-### 예제코드: [async-local-storage](https://nodejs.org/api/async_hooks.html#async_hooks_class_asynclocalstorage) 를 사용하여 요청 기능과 서비스 간에 TransactionId 공유하기
+### 예제 코드: [async-local-storage](https://nodejs.org/api/async_hooks.html#async_hooks_class_asynclocalstorage) 를 사용하여 요청 기능과 서비스 간에 TransactionId 공유하기
 
  **async-local-storage가 무엇인가?** 몇몇 사람들은 이것이 쓰레드 별 고유한 저장소를 가지게 하는 노드의 대안이라고 생각 할 수 있다.
  이것은 노드의 비동기 흐름을 위한 저장소다. 더 자세한 내용은 [여기에서](https://www.freecodecamp.org/news/async-local-storage-nodejs/)
@@ -199,4 +199,4 @@ class logger {
 
 From [rapid7](https://blog.rapid7.com/2016/12/23/the-value-of-correlation-ids/)
 
-> In the old days when transactional behavior happened in a single domain, in step-by-step procedures, keeping track of request/response behavior was a simple undertaking. However, today one request to a particular domain can involve a myriad of subsequent asynchronous requests from the starting domain to others. For example, you send a request to Expedia, but behind the scenes Expedia is forwarding your request as a message to a message broker. Then that message is consumed by a hotel, airline and car rental agency that responds asynchronously too. So the question comes up, with your one request being passed about to a multitude of processing consumers, how do we keep track of the transaction? The answer is: use a Correlation ID.
+> 트랜젝션 동작이 하나의 단일 도메인, 단계적 절차에서 발생했던 과거에는 요청/응답 동작을 추적하는것은 간단했습니다. 하지만 오늘날 특정 도메인에 대한 하나의 요청은 시작 도메인에서 다른 도메인으로 이어지고, 수 많은 후속 비동기 요청을 포함합니다. 예를 들어, Expedia 에게 요청을 보내면 Expedia는 이 메시지를 브로커에게 요청으로 전달합니다. 그리고 나서 그 메시지는 호텔, 항공사, 렌터카 등 다양한 에이전시에 의해 처리되고 또한 비동기적으로 반응합니다. 여기서 질문은, 하나의 요청이 다양한 처리 소비자에게 전달되는 상황이라면 어떻게 트랜잭션을 추적해야할까요? 답은 상관관계 ID를 사용하는 것 입니다.
